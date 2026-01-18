@@ -1,9 +1,20 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
+import * as util from "util";
 import { Context, COLLECTION_LIMIT_MESSAGE } from "@zilliz/claude-context-core";
 import { SnapshotManager } from "./snapshot.js";
 import { ensureAbsolutePath, truncateContent, trackCodebasePath } from "./utils.js";
+
+const formatErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) {
+        return error.stack ?? error.message;
+    }
+    if (typeof error === "string") {
+        return error;
+    }
+    return util.inspect(error, { depth: null, breakLength: Infinity });
+};
 
 export class ToolHandlers {
     private context: Context;
@@ -402,7 +413,7 @@ export class ToolHandlers {
             const lastProgress = this.snapshotManager.getIndexingProgress(absolutePath);
 
             // Set codebase to failed status with error information
-            const errorMessage = error.message || String(error);
+            const errorMessage = formatErrorMessage(error);
             this.snapshotManager.setCodebaseIndexFailed(absolutePath, errorMessage, lastProgress);
             this.snapshotManager.saveCodebaseSnapshot();
 
